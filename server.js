@@ -1,13 +1,21 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import db from './db.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static files built by Vite (dist folder)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running smoothly' });
@@ -93,6 +101,11 @@ app.post('/api/trials', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Any route that is not API renders React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
