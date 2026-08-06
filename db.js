@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { createClient } from '@libsql/client';
+import dotenv from 'dotenv';
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/api': 'http://localhost:5000'
-    }
-  }
+dotenv.config();
+
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || '',
+  authToken: process.env.TURSO_AUTH_TOKEN || ''
 });
+
+export default db;
