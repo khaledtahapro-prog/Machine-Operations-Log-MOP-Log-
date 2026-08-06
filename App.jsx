@@ -1,23 +1,23 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import DataEntry from './pages/DataEntry';
+import TrialsDashboard from './pages/TrialsDashboard';
+import Formulations from './pages/Formulations';
 
-const Navbar = () => {
+function App() {
   return (
-    <nav style={{ backgroundColor: '#1e293b', padding: '15px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
-      <h2 style={{ margin: 0, fontSize: '20px', color: '#38bdf8' }}>PlastiLog (MOP-Log)</h2>
-      <div style={{ display: 'flex', gap: '20px' }}>
-        <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          Data Entry
-        </Link>
-        <Link to="/dashboard" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          Trials Dashboard
-        </Link>
-        <Link to="/formulations" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          Formulations
-        </Link>
+    <Router>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<DataEntry />} />
+          <Route path="/dashboard" element={<TrialsDashboard />} />
+          <Route path="/formulations" element={<Formulations />} />
+        </Routes>
       </div>
-    </nav>
+    </Router>
   );
-};
+}
 
-export default Navbar;
+export default App;
