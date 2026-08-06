@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import Tesseract from 'tesseract.js';
 
 const DataEntry = () => {
   const [section, setSection] = useState('PIPE');
   const [entryType, setEntryType] = useState('USUAL_WORK');
   const [phase, setPhase] = useState('REGULAR');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
 
   const [formData, setFormData] = useState({
     trialName: '',
@@ -52,6 +55,71 @@ const DataEntry = () => {
     return Object.values(formulation).reduce((sum, val) => sum + val, 0).toFixed(3);
   };
 
+  const parseImageText = (text) => {
+    const updatedParams = { ...parameters };
+    const lines = text.split('\n');
+
+    lines.forEach((line) => {
+      const lower = line.toLowerCase();
+      
+      if (lower.includes('zone 1') || lower.includes('z1')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.zone1Temp = match[0];
+      }
+      if (lower.includes('zone 2') || lower.includes('z2')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.zone2Temp = match[0];
+      }
+      if (lower.includes('zone 3') || lower.includes('z3')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.zone3Temp = match[0];
+      }
+      if (lower.includes('cycle')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.cycleTime = match[0];
+      }
+      if (lower.includes('rpm') || lower.includes('feeder')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.feederRpm = match[0];
+      }
+      if (lower.includes('amp')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.machineAmp = match[0];
+      }
+      if (lower.includes('weight')) {
+        const match = line.match(/\d+(\.\d+)?/);
+        if (match) updatedParams.productWeight = match[0];
+      }
+    });
+
+    setParameters(updatedParams);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setScanProgress(0);
+
+    try {
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setScanProgress(Math.round(m.progress * 100));
+          }
+        }
+      });
+      parseImageText(result.data.text);
+      alert('Data extracted successfully from image!');
+    } catch (error) {
+      console.error('OCR Error:', error);
+      alert('Failed to extract data from image.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -91,9 +159,17 @@ const DataEntry = () => {
   return (
     <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
       <h2>Machine Operating Conditions & Trial Entry</h2>
+
+      <fieldset style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px', border: '2px dashed #0070f3', backgroundColor: '#f0f7ff' }}>
+        <legend><strong>Auto-fill from Machine Image (OCR)</strong></legend>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <input type="file" accept="image/*" onChange={handleImageUpload} disabled={isScanning} />
+          {isScanning && <span>Scanning: {scanProgress}%</span>}
+        </div>
+      </fieldset>
+
       <form onSubmit={handleSubmit}>
         
-        {/* Section & Type Selection */}
         <fieldset style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px', border: '1px solid #ccc' }}>
           <legend><strong>General Info</strong></legend>
           <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
@@ -132,7 +208,6 @@ const DataEntry = () => {
           </div>
         </fieldset>
 
-        {/* Recipe / Formulation Inputs */}
         <fieldset style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px', border: '1px solid #ccc' }}>
           <legend><strong>Formulation (Recipe)</strong></legend>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
@@ -147,7 +222,6 @@ const DataEntry = () => {
           <p style={{ marginTop: '10px', color: '#0070f3' }}><strong>Total Weight: {calculateTotalFormulation()} kg</strong></p>
         </fieldset>
 
-        {/* Operating Parameters */}
         <fieldset style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px', border: '1px solid #ccc' }}>
           <legend><strong>Machine Parameters</strong></legend>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
